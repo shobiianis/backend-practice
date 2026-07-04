@@ -6,10 +6,12 @@ dotenv.config({
   path: "./.env",
 });
 
-connectDB().then(() => {
-  app.listen(process.env.PORT,()=>{
-    console.log("Database connected and server is on")
+connectDB()
+  .then(() => {
+    app.listen(process.env.PORT, () => {
+      console.log("Database connected and server is on");
+    });
   })
-}).catch((err)=>{|
-  console.log("Mongodb connection failed on server",err)
-})
+  .catch((err) => {
+    console.log("Mongodb connection failed on server", err);
+  });

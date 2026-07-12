@@ -14,7 +14,7 @@ app.use(
 //below four are configurations for app using express
 app.use(express.json({ limit: "16kb" })); //to accept json
 app.use(express.urlencoded()); // to accept url querry params
-app.use(express.static("Public")); //to save temp files like logo or favicon icon or naam public eslye kyu k humne public naam ka folder banaya hua hai
+app.use(express.static("public")); //to save temp files like logo or favicon icon or naam public eslye kyu k humne public naam ka folder banaya hua hai
 app.use(cookieParser());
 
 //routes import

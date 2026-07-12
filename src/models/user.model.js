@@ -61,10 +61,11 @@ userSchema.pre("save", async function (next) {
   k jab password change ho ya first time dale to password becryopt kare eslye ik condition 
   lagayi hai k agar password change nae hua to next karde otherwise bycrypt kare */
 
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password")) return;
+  // next();
 
-  this.password = bcrypt.hash(this.password, 10);
-  next();
+  this.password = await bcrypt.hash(this.password, 10);
+  // next();
 });
 
 /*  ab agar password database se check hoga to woh to ik encrypted format me hoga to usko match karne k lye

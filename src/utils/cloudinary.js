@@ -1,24 +1,37 @@
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
+import dotenv from "dotenv";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// dotenv.config({
+//   path: "./.env",
+// });
 
 const uploadOnCloudinary = async (localFilePath) => {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  if (!localFilePath) return null;
+
+  // if (
+  //   !process.env.CLOUDINARY_CLOUD_NAME ||
+  //   !process.env.CLOUDINARY_API_KEY ||
+  //   !process.env.CLOUDINARY_API_SECRET
+  // ) {
+  //   console.error(
+  //     "Cloudinary credentials are not loaded from environment variables.",
+  //   );
+  //   return null;
+  // }
+
   try {
-    if (!localFilePath) return null;
-    //upload the file on cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "auto", // auto means it will detect by itself for image , video or file type and upload accordingly
+      resource_type: "auto",
     });
-    // file has been uploaded successfull
-    console.log("file is uploaded on cloudinary ", response.url);
+
     return response;
   } catch (error) {
-    fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the upload operation got failed
+    console.log("Cloudinary upload failed:", error.message);
     return null;
   }
 };

@@ -4,6 +4,24 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessAndRefereshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating referesh and access token",
+    );
+  }
+};
+
 const registerUser = asyncHandler(async (req, res) => {
   // req.body
   // res.status(200).json({
@@ -84,4 +102,87 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  // req body --> data extract
+  //username or email, password
+  //validation
+  //check if user exists
+  //compare password
+  //generate access token and refresh token
+  //return response in cookies and data
+
+  const { username, email, password } = req.body;
+
+  if (!username || !email) {
+    throw new ApiError(400, "Username or email is required");
+  }
+  if (!password) {
+    throw new ApiError(400, "Password is required");
+  }
+
+  /*this below function will check that the provided username or email exists in the database or not.
+   If it exists, it will return the user object, otherwise it will return null.*/
+
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+  });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  /*
+  ye jo isPasswordCorrect hai ye custom method hai jo humne user.model.js me banaya hai 
+  or ye hum user me eslye use kar parahe hain kyu k jab humne findOne se user nikala to isme sari schema/model ki
+  functionality jayengi 
+  */
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid user credentials");
+  }
+
+  /*
+  ab hume pata chal gaya k user exists karta hai or password bhi match ho gaya ab hume access token or refresh token generate karna hai
+  or usko database me save karna hai ta k pata chale k logged in hogaya hai user
+  */
+  //  ------------------
+  /* ab hum ik custom method banakar bhi kar sakte hain generateAccessAndRefreshToken k naam se
+      const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+      user._id,
+      );
+      ese bhi kar sakte hain magar humne direct karlia 
+  */
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save({ validateBeforeSave: false });
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken",
+  );
+
+  /*
+  humne cookies me set eslye kia hai kyu k ta k server bhi read kar sake or data me eslye bheja
+  ta k client bhi usse kaam le sake
+  */
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        },
+        "User logged In Successfully",
+      ),
+    );
+});
+export { registerUser, loginUser };
